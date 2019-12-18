@@ -158,6 +158,127 @@ def extrair_Info(filename, nomes):
     
     return lista
 
+def searchWord(model, sentences, porct): # mesma coisa q o searchChar
+    Lista = model.split(" ")
+    listagrande2 = []
+    for i in range(len(sentences)):
+        listagrande2.append(sentences[i].split(" "))
+    
+    contador = 0
+    contadorLista = []
+    
+    for k in range(len(listagrande2)):
+        contador = 0
+        for i in range(len(Lista)):
+            for j in range (len(listagrande2[k])):
+                if Lista[i] == listagrande2[k][j]:
+                    contador+=1
+                if Lista[i].lower() == listagrande2[k][j]:
+                    contador+=1
+                if Lista[i].upper() == listagrande2[k][j]:
+                    contador+=1
+                
+        contadorLista.append(contador)
+
+    if max(contadorLista) <= ((porct/100)*len(Lista)):
+        contadorLista, listagrande2 = None
+    return contadorLista, listagrande2
+
+
+
+def searchChar(alcance, modelo, sentence, porct): #Alcance é quantas palavras o código vai analisar, modelo é a sentença desejada, sentence é o conjunto
+    #de todas sentenças, porct é a porcentagem do quanto as palavras precisam ser próximas
+    
+    try:
+        palavra = searchWord(modelo, sentence, porct)
+        
+    
+
+        
+        copyPalavra = palavra[0][:] #Serve para encontrar o índice das palavras que mais combinam
+        copyPalavra.sort()
+        copyPalavra.reverse()
+        
+        
+        lista1 = []
+        listaPalavras = []
+        
+        for i in range(alcance):
+            lista1.append(palavra[0].index(copyPalavra[i]))
+            
+        for i in lista1:
+            listaPalavras.append(palavra[1][i])
+        
+            
+        modelo2 = list(modelo)
+        modelo2.remove(" ")
+        contador = 0
+        contadorLista = []
+            
+        for j in range(len(listaPalavras)):
+            contador = 0
+            for i in range(len(modelo2)):
+                for k in range(len(listaPalavras[j])):
+                    for l in range(len(listaPalavras[j][k])):
+                        if modelo2[i] == listaPalavras[j][k][l]:
+                            contador+=1
+            contadorLista.append(contador)
+        
+        provavelStr = contadorLista.index(max(contadorLista))
+        teste1 = " ".join(listaPalavras[provavelStr])
+        
+        maior_indice = palavra[1].index(teste1.split(" "))
+
+        return teste1, maior_indice
+    except TypeError:
+        return "Não consta"
+    
+def runAll(dic_geral, filename, nomes_completos): #Só um "procedimento" pra rodar o código
+
+    dic_geral = juntar_professores(filename, nomes_completos)
+    lista_an = []
+    lista_an2 = []
+    
+    for i in range(len(dic_geral[0])):
+        for j in range(len(dic_geral[3][i]["NOME-DO-EVENTO"])):
+            lista_an.append(dic_geral[3][i]["NOME-DO-EVENTO"][j][1])
+        lista_an2.append(lista_an)
+        lista_an = []
+
+    
+    
+    df = pd.ExcelFile('../Qualis_Evento.xlsx').parse('Qualis2019') 
+    x=[]
+    y=[]
+    x.append(df['Nome Padrão'])
+    y.append(df['Qualis Final'])
+    
+    
+    teste_lista = []
+    teste_dic = {}
+    lista_extrato = []
+    lista_extrato2 = []
+    
+    for i in range (len(lista_an2)):
+        for j in (lista_an2[i]):
+            teste1 = searchChar(2,j,x[0],85)
+            
+            if teste1 == "Não consta":
+                lista_extrato.append("Não consta")
+            else:
+                lista_extrato.append(y[0][teste1[1]])
+            
+            
+            teste_lista.append(teste1[0])
+            
+        dic_geral[3][i]["EXTRATO"] = lista_extrato
+        teste_dic[nomes_completos[i]] = teste_lista
+        teste_lista = []
+        lista_extrato2.append(lista_extrato)
+        lista_extrato = []
+    
+    return dic_geral
+
 def anexar_qualis_artigos():
     pass
 
@@ -178,6 +299,7 @@ def menu_principal():
     
     # obter o dicionario de professores
     dic_geral = juntar_professores(filenames, nomesCompletos)
-    print(dic_geral)
+    teste = runAll(dic_geral, filenames, nomesCompletos)
+    print(teste)
 
 menu_principal()
